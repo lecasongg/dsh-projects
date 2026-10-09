@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Projects",
+    "description": "Adds a Projects panel to the sidebar showing a two-level workspace -> project -> conversation tree, with new-project under each workspace, new-conversation under each project, and openable conversation rows."
+  }
+}
