@@ -35,14 +35,22 @@ level into it. Sideloading a panel — `sidebar.panellist` +
 
 ## Install
 
-The bundle is already installed and linked in the `web` profile. To reinstall
-or install it elsewhere, point `plugin_manager` at the **package directory**
+Clone this repository anywhere:
+
+```sh
+git clone https://github.com/lecasongg/dsh-projects.git
+```
+
+Then point `plugin_manager` at the **cloned package directory**
 (not at a tarball, not at the workspace root):
 
 ```
 plugin_manager  action: "install_bundle"
-                target: "C:\\Users\\ZHKJE\\Documents\\deepseek-harness\\default-workspace\\dsh-projects"
+                target: "<absolute path of the cloned dsh-projects directory, e.g. D:\\plugins\\dsh-projects>"
 ```
+
+The `web` profile on this machine already has this very directory installed and
+linked, so no second install is needed here.
 
 The bundle patch it applies is `cordis.patch.yml`:
 

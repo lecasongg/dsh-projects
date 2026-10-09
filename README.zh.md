@@ -51,13 +51,20 @@
 
 ## 三、安装
 
-插件**已经安装并链接**在 `web` profile 里。要重装或装到别处，让
-`plugin_manager` 指向**包目录**（不是 tarball，也不是工作区根目录）：
+先把本仓库克隆到任意目录：
+
+```sh
+git clone https://github.com/lecasongg/dsh-projects.git
+```
+
+再让 `plugin_manager` 指向**克隆下来的包目录**（不是 tarball，也不是工作区根目录）：
 
 ```
 plugin_manager  action: "install_bundle"
-                target: "C:\\Users\\ZHKJE\\Documents\\deepseek-harness\\default-workspace\\dsh-projects"
+                target: "<克隆下来的 dsh-projects 目录的绝对路径，例如 D:\\plugins\\dsh-projects>"
 ```
+
+本机当前的 `web` profile 里已经装好并链接了本目录，所以这台机器上不必再装一次。
 
 安装时应用的 bundle patch 是 `cordis.patch.yml`：
 
