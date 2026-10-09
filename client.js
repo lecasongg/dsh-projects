@@ -243,11 +243,12 @@ window.__ModuleLoader__.load({
      * top-level rather than nesting a third level; every registered Workspace
      * therefore appears exactly once.
      *
-     * A Session is placed under the deepest registered Workspace whose path
-     * contains the Session's cwd (so a project's conversations land in the
-     * project, not in its parent), falling back to the Workspace that
-     * accounts for the Session id when no path contains it. Sessions with
-     * neither go to the ungrouped bucket.
+     * A Session belongs to the Workspace that accounts for its id in that
+     * Workspace's `sessionIds` — membership only, exactly like the shipped
+     * browser (`groupByWorkspace`), so both surfaces always agree about which
+     * Workspace owns a Session. A `cwd` that merely sits inside a Workspace
+     * path does NOT make the Session a member of it: such a Session stays in
+     * the ungrouped bucket, which is also where the shipped sidebar puts it.
      * @param workspaces - Workspace snapshot items (`workspaceId`, `title`, `path`, `sessionIds`).
      * @param sessions - Session summaries; subagent children are skipped here.
      * @param archivedSessionIds - registry-global archive set (marked, not hidden).
@@ -302,25 +303,12 @@ window.__ModuleLoader__.load({
       let sessionCount = 0
 
       /**
-       * The Workspace owning one Session: deepest path containment first,
-       * then the accounting Workspace.
+       * The Workspace accounting for one Session: membership only, matching the
+       * shipped browser's `groupByWorkspace`. A Session whose `cwd` merely sits
+       * inside a Workspace path is not that Workspace's member — it stays
+       * ungrouped, exactly as the shipped sidebar shows it.
        */
       const ownerOf = (summary) => {
-        const cwd = typeof summary.cwd === 'string' ? summary.cwd : ''
-        if (cwd !== '') {
-          const key = pathKey(cwd)
-          let best
-          let bestLength = -1
-          for (const item of items) {
-            const itemKey = pathKey(item.path)
-            if (itemKey.length <= bestLength) continue
-            if (key === itemKey || key.startsWith(`${itemKey}/`)) {
-              best = item
-              bestLength = itemKey.length
-            }
-          }
-          if (best !== undefined) return best
-        }
         const id = String(summary.id)
         return items.find(item => item.sessionIds.includes(id))
       }

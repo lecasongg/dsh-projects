@@ -107,10 +107,11 @@ Nothing is persisted, and no `parentId` is added to any shipped schema.
   one row.
 - Windows and UNC paths compare case-insensitively; POSIX paths compare
   case-sensitively.
-- Sessions are attached to the *deepest* registered workspace whose path
-  contains the session's `cwd`, falling back to the workspace that accounts for
-  the session id; sessions with neither land in the panel's
-  「临时对话 / 未分组」 bucket. Subagent children are not rows.
+- A Session belongs to the workspace that accounts for its id in that
+  workspace's `sessionIds` — **membership only**, the same rule the shipped
+  sidebar's `groupByWorkspace` applies, so both surfaces agree. A Session whose
+  `cwd` merely sits inside a workspace path is *not* a member of it and lands in
+  the panel's 「临时对话 / 未分组」 bucket. Subagent children are not rows.
 
 ## Honest limitations
 
@@ -124,7 +125,11 @@ Nothing is persisted, and no `parentId` is added to any shipped schema.
   `c:/work/a/P1` nest in the panel but not in the sidebar, and a three-level
   grandchild stays top-level in the panel while the sidebar may nest it.
 - **Archived sessions**: the panel marks them as "已归档" and keeps them
-  visible; the shipped sidebar hides them.
+  visible; the shipped sidebar hides them. By the same token the panel shows a
+  blank, unaccounted Session inside its ungrouped bucket, while the shipped
+  sidebar hides the whole ungrouped bucket unless such a Session is selected.
+  Before the 2026-10-09 correction the panel also adopted such a stray into a
+  workspace group by `cwd`, so one Session appeared in two different places.
 - The panel is an **overview**, not the primary list: it has no drag-reorder,
   rename, pin, archive or delete, and it never removes a directory.
 - **Creating a project is one level deep**, under an already-registered

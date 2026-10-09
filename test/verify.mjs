@@ -288,10 +288,10 @@ check('parentFolderOf stops at a UNC share root', parentFolderOf('//server/share
 check('baseName returns the last segment', baseName('C:/work/A/P1') === 'P1', baseName('C:/work/A/P1'))
 
 const workspaces = [
-  W('ws-a', 'C:/work/A', '工作区 A'),
-  W('ws-p1', 'C:/work/A/P1', 'P1'),
-  W('ws-p2', 'C:/work/A/P2', 'P2'),
-  W('ws-b', 'C:/work/B', '工作区 B'),
+  W('ws-a', 'C:/work/A', '工作区 A', ['s-a']),
+  W('ws-p1', 'C:/work/A/P1', 'P1', ['s-p1', 's-p1-sub']),
+  W('ws-p2', 'C:/work/A/P2', 'P2', ['s-blank']),
+  W('ws-b', 'C:/work/B', '工作区 B', ['s-b']),
 ]
 const sessions = [
   S('s-a', 'C:/work/A', { updatedAt: 10 }),
@@ -316,11 +316,22 @@ check('the archive set marks a row instead of hiding it', tree.roots[1].sessions
 check('a subagent child is not a tree row', tree.sessionCount === 7, String(tree.sessionCount))
 check('sessions outside every workspace fall to ungrouped, newest first', idsOf(tree.ungrouped) === 's-loose,s-none', idsOf(tree.ungrouped))
 
-const fallback = deriveTree([W('ws-a', 'C:/work/A', 'A', ['s-member'])], [S('s-member', undefined)], [])
-check('membership is the fallback owner when no path contains the cwd', idsOf(fallback.roots[0].sessions) === 's-member', idsOf(fallback.roots[0].sessions))
+// Placement is membership alone. A cwd that merely sits inside a Workspace does
+// NOT make the Session its member; the shipped sidebar shows such a Session
+// under Ungrouped, and the panel must agree. Reported 2026-10-09: two blank
+// conversations in A:\projects, the earlier one created before that directory
+// was registered as a Workspace, appeared under the project in this panel while
+// the shipped sidebar listed it under 未分组.
+const aligned = deriveTree(
+  [W('ws-a', 'C:/work/A', 'A', ['s-member'])],
+  [S('s-member', undefined), S('s-stray', 'C:/work/A')],
+  [],
+)
+check('membership decides ownership even without a cwd', idsOf(aligned.roots[0].sessions) === 's-member', idsOf(aligned.roots[0].sessions))
+check('a cwd inside a workspace without membership stays ungrouped', idsOf(aligned.ungrouped) === 's-stray', idsOf(aligned.ungrouped))
 
 const capped = deriveTree(
-  [W('ws-a', 'C:/work/A'), W('ws-p1', 'C:/work/A/P1'), W('ws-deep', 'C:/work/A/P1/deep')],
+  [W('ws-a', 'C:/work/A'), W('ws-p1', 'C:/work/A/P1'), W('ws-deep', 'C:/work/A/P1/deep', 'deep', ['s-deep'])],
   [S('s-deep', 'C:/work/A/P1/deep')],
   [],
 )
@@ -329,12 +340,12 @@ check('the capped deep workspace keeps its own sessions', idsOf(capped.roots[1].
 check('a three-level grandchild still appears exactly once', capped.roots.length + capped.roots[0].projects.length === 3)
 
 const windows = deriveTree(
-  [W('ws-a', 'C:\\Work\\A', 'A'), W('ws-p', 'c:/work/a/Proj', 'Proj')],
+  [W('ws-a', 'C:\\Work\\A', 'A'), W('ws-p', 'c:/work/a/Proj', 'Proj', ['s-win'])],
   [S('s-win', 'C:\\WORK\\A\\PROJ\\src')],
   [],
 )
 check('a project is recognized across separator and case spelling', windows.roots.length === 1 && windows.roots[0].projects[0]?.workspaceId === 'ws-p', JSON.stringify(windows.roots.map((root) => root.workspaceId)))
-check('a Windows cwd resolves to the deepest containing workspace', idsOf(windows.roots[0].projects[0].sessions) === 's-win', idsOf(windows.roots[0].projects[0].sessions))
+check('a member session lands in its project regardless of cwd spelling', idsOf(windows.roots[0].projects[0].sessions) === 's-win', idsOf(windows.roots[0].projects[0].sessions))
 
 const orphan = deriveTree([W('ws-a', 'C:/work/A'), W('ws-orphan', 'C:/work/A/nope/deep')], [], [])
 check('a workspace whose direct parent is unregistered stays top-level', orphan.roots.map((root) => root.workspaceId).join(',') === 'ws-a,ws-orphan', orphan.roots.map((root) => root.workspaceId).join(','))
@@ -391,8 +402,8 @@ check('a successful creation is reported', JSON.stringify(ui).includes('已创�
 check('the input closes after success', nodesOf(ui, (node) => node.props['data-field'] === 'project-name').length === 0)
 
 // The host registers the new directory as a workspace; the live snapshot now
-// contains it and a conversation inside it.
-liveWorkspaces.push(W('ws-p1', 'C:/work/A/P1', 'P1'))
+// contains it, and the conversation created inside it is that workspace's member.
+liveWorkspaces.push(W('ws-p1', 'C:/work/A/P1', 'P1', ['s-1']))
 liveSessions.push(S('s-1', 'C:/work/A/P1', { displayTitle: '重构项目区', updatedAt: 7 }))
 ui = fake.render(panel.component, panelProps())
 text = JSON.stringify(ui)
